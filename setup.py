@@ -7,12 +7,19 @@ import pybind11
 from setuptools.command.build_ext import build_ext
 from setuptools import setup, Extension, find_packages
 
+here = os.path.abspath(os.path.dirname(__file__))
+about = {}
+
+with open(os.path.join(here, "src", "example", "__version__.py"), "r") as f:
+    exec(f.read(), about)
+
+with open("README.md", "r") as f:
+    readme = f.read()
+
 ext_modules = [
     Extension(
         "example",
-        sources=[
-            "src/example.cpp",
-        ],
+        sources=[os.path.join("src", "example", "example.cpp")],
         include_dirs=[
             pybind11.get_include(),
         ],
@@ -60,26 +67,17 @@ class BuildExt(build_ext):
     """A custom build extension for adding compiler-specific options."""
 
     c_opts = {
-        "msvc": ["/EHsc"],
+        "msvc": ["/MD", "/EHsc", "/std:c++14"],
         "unix": ["-O3", "-Wall", "-shared", "-fPIC"],
     }
 
-    if sys.platform == "linux":
-        unix_l_opts = ["-lncursesw", "-ltinfo"]
-    elif sys.platform == "darwin":
-        unix_l_opts = ["-lncurses"]
-
     l_opts = {
         "msvc": [],
-        "unix": unix_l_opts,
+        "unix": [],
     }
 
     if sys.platform == "darwin":
-        darwin_opts = [
-            "-stdlib=libc++",
-            "-mmacosx-version-min=10.7",
-            "-D_XOPEN_SOURCE_EXTENDED",
-        ]
+        darwin_opts = ["-stdlib=libc++", "-mmacosx-version-min=10.7"]
         c_opts["unix"] += darwin_opts
         l_opts["unix"] += darwin_opts
 
@@ -102,6 +100,27 @@ class BuildExt(build_ext):
 
 
 setup(
+    name=about["__title__"],
+    version=about["__version__"],
+    description=about["__description__"],
+    long_description=readme,
+    long_description_content_type="text/markdown",
+    url=about["__url__"],
+    author=about["__author__"],
+    author_email=about["__author_email__"],
+    license=about["__license__"],
+    packages=find_packages(where="src", exclude=("tests",)),
+    package_dir={"": "src"},
     ext_modules=ext_modules,
+    include_package_data=True,
+    classifiers=[
+        # Trove classifiers
+        # Full list: https://pypi.python.org/pypi?%3Aaction=list_classifiers
+        "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+    ],
     cmdclass={"build_ext": BuildExt},
 )
