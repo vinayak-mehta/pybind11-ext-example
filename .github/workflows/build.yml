@@ -1,0 +1,71 @@
+# Automatically build binary wheels and source packages.
+name: cibuildwheel
+
+on:
+  push:
+    tags:
+      - "*"
+
+env:
+  CIBW_BUILD: "cp3?-manylinux_x86_64 cp3?-macosx_x86_64"
+  CIBW_SKIP: "cp35-*"
+
+jobs:
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-18.04, macos-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - uses: actions/setup-python@v2
+        name: Install Python
+        with:
+          python-version: 3.8
+
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x86
+
+      - name: Build dependencies & wheels (Windows / x86)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: |
+          python -m pip --disable-pip-version-check install cibuildwheel==1.10.0
+          python -m cibuildwheel --output-dir wheelhouse
+        env:
+          CIBW_BUILD: "cp3?-win32"
+          CIBW_SKIP: "cp35-*"
+          DISTUTILS_USE_SDK: 1
+          MSSdk: 1
+
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: amd64
+
+      - name: Build dependencies & wheels (Windows / amd64)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: |
+          python -m pip --disable-pip-version-check install cibuildwheel==1.10.0
+          python -m cibuildwheel --output-dir wheelhouse
+        env:
+          CIBW_BUILD: "cp3?-win_amd64"
+          CIBW_SKIP: "cp35-*"
+          DISTUTILS_USE_SDK: 1
+          MSSdk: 1
+
+      - name: Install cibuildwheel & build wheels (Linux & MacOS)
+        if: runner.os != 'Windows'
+        run: |
+          python -m pip --disable-pip-version-check install cibuildwheel==1.10.0
+          python -m cibuildwheel --output-dir wheelhouse
+
+      - uses: actions/upload-artifact@v2
+        with:
+          path: ./wheelhouse/*.whl

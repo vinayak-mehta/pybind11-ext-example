@@ -18,7 +18,7 @@ with open("README.md", "r") as f:
 
 ext_modules = [
     Extension(
-        "example",
+        "example.example",
         sources=[os.path.join("src", "example", "example.cpp")],
         include_dirs=[
             pybind11.get_include(),
