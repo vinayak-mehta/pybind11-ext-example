@@ -6,10 +6,8 @@ void print(const char* s) {
   printf("%s\n", s);
 }
 
-int add(long a, long b) {
-  long c = a + b;
-
-  return c;
+long add(long a, long b) {
+  return a + b;
 }
 
 PYBIND11_MODULE(example, m) {
